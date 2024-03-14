@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video KYC</title>
+    <!-- Include Bootstrap for styling -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #form-container {
+            width: 300px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"],
+        input[type="date"],
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #video-element,
+        #canvas-element {
+            margin-top: 20px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #capture-button {
+            margin-top: 10px;
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        #capture-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Video KYC</h1>
+    <div id="form-container">
+        <label for="name">Name:</label><br>
+        <input type="text" id="name" required><br>
+
+        <label for="dob">Date of Birth:</label><br>
+        <input type="date" id="dob" required><br>
+
+        <label for="address">Address:</label><br>
+        <textarea id="address" required></textarea><br>
+
+        <label for="pan-aadhaar">PAN Card / Aadhaar:</label><br>
+        <input type="text" id="pan-aadhaar" required><br>
+
+        <label for="signature">Signature:</label><br>
+        <input type="file" id="signature" accept="image/*" required><br>
+
+        <label for="income-range">Income Range:</label><br>
+        <select id="income-range" required>
+            <option value="< 1 Lakh">Less than 1 Lakh</option>
+            <option value="1 - 5 Lakhs">1 - 5 Lakhs</option>
+            <option value="5 - 10 Lakhs">5 - 10 Lakhs</option>
+            <option value="> 10 Lakhs">More than 10 Lakhs</option>
+        </select><br>
+
+        <label for="employment-type">Type of Employment:</label><br>
+        <input type="text" id="employment-type" required><br>
+
+        <label for="photo">Live Photograph:</label><br>
+        <video id="video-element" width="320" height="240" autoplay></video><br>
+        <button id="capture-button" onclick="capturePhoto()">Capture Photo</button><br>
+        
+        <button id="submit-button" onclick="submitKYC()">Submit KYC</button>
+    </div>
+
+
+        <button onclick="startVideoKYC()">Start Video KYC</button>
+    </div>
+
+    <video id="video-element" style="display:none; width: 300px; margin: 0 auto;"></video>
+    <button id="capture-button" style="display:none;" onclick="capturePhoto()">Capture Photo</button>
+    <canvas id="canvas-element" style="display:none;"></canvas>
+
+    <script>
+        // Function to start video KYC process
+        function startVideoKYC() {
+            // Show video element and capture button
+            window.location.href = "video.html";
+            document.getElementById('video-element').style.display = 'block';
+            document.getElementById('capture-button').style.display = 'block';
+            
+
+            // Start video stream
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    var video = document.getElementById('video-element');
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function(err) {
+                    console.error('Error accessing camera: ', err);
+                });
+        }
+
+        // Function to capture photo from video stream
+        function capturePhoto() {
+            var video = document.getElementById('video-element');
+            var canvas = document.getElementById('canvas-element');
+            var context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var photoData = canvas.toDataURL('image/png');
+
+            // Hide video element and capture button
+            document.getElementById('video-element').style.display = 'none';
+            document.getElementById('capture-button').style.display = 'none';
+
+            // Send captured photo to backend along with other data
+            var formData = {
+                name: document.getElementById('name').value,
+                dob: document.getElementById('dob').value,
+                address: document.getElementById('address').value,
+                // Add more form fields as needed
+                photo: photoData
+            };
+
+            // Send data to backend
+            fetch('/video-kyc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok.');
+            })
+            .then(function(data) {
+                alert(data.message); // Show success message
+            })
+            .catch(function(error) {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
